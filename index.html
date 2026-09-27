@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Retrobrowser</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+
+  body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 13px;
+    color: #000000;
+    background: #c5ccd3;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: #007aff; text-decoration: none; }
+
+  .app {
+    max-width: 720px;
+    margin: 0 auto;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    border-left: 1px solid #8e8e93;
+    border-right: 1px solid #8e8e93;
+    overflow: hidden;
+  }
+
+  /* ШАПКА */
+  .header {
+    height: 44px;
+    flex-shrink: 0;
+    background: linear-gradient(180deg, #f0f4f9 0%, #c8d0da 50%, #b3bcc7 51%, #d5dce4 100%);
+    border-bottom: 1px solid #5a6472;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.7) inset, 0 -1px 0 rgba(0,0,0,0.15) inset;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    gap: 8px;
+  }
+
+  .logo {
+    font-size: 16px;
+    font-weight: bold;
+    color: #2c3542;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.85);
+    letter-spacing: -0.3px;
+    flex-shrink: 0;
+    user-select: none;
+  }
+
+  .search-box {
+    flex: 1;
+    display: flex;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .search-input {
+    flex: 1;
+    height: 30px;
+    padding: 0 12px 0 30px;
+    font-family: inherit;
+    font-size: 13px;
+    color: #2c3542;
+    background: #ffffff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a8a8e' stroke-width='2.5' stroke-linecap='round'><circle cx='11' cy='11' r='7'/><path d='M20 20l-4-4'/></svg>") no-repeat 8px center;
+    background-size: 13px 13px;
+    border: 1px solid #6b7280;
+    border-radius: 15px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.25) inset, 0 1px 0 rgba(255,255,255,0.5);
+    outline: none;
+    min-width: 0;
+  }
+
+  .search-input:focus {
+    border-color: #3b6ea5;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.25) inset, 0 0 0 3px rgba(0,122,255,0.25);
+  }
+
+  .search-input::placeholder { color: #8a8a8e; }
+
+  /* КНОПКИ iOS 6 */
+  .ios-btn {
+    height: 30px;
+    padding: 0 12px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: bold;
+    color: #ffffff;
+    background: linear-gradient(180deg, #6fa8dc 0%, #2d6ca8 50%, #1e5a96 51%, #4a86c0 100%);
+    border: 1px solid #1a4a78;
+    border-radius: 15px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.5) inset,
+      0 -1px 0 rgba(0,0,0,0.25) inset,
+      0 1px 2px rgba(0,0,0,0.25);
+    text-shadow: 0 -1px 0 rgba(0,0,0,0.4);
+    cursor: pointer;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ios-btn::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    height: 50%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.5), rgba(255,255,255,0));
+    pointer-events: none;
+    border-radius: 15px 15px 0 0;
+  }
+
+  .ios-btn:active {
+    background: linear-gradient(180deg, #4a86c0 0%, #1e5a96 50%, #2d6ca8 51%, #6fa8dc 100%);
+  }
+
+  .ios-btn.gray {
+    background: linear-gradient(180deg, #e6e9ed 0%, #b8bec7 50%, #a3abb5 51%, #c8ced6 100%);
+    border-color: #6b7280;
+    color: #2c3542;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.75);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.85) inset,
+      0 -1px 0 rgba(0,0,0,0.1) inset,
+      0 1px 2px rgba(0,0,0,0.2);
+  }
+
+  .ios-btn.gray:active {
+    background: linear-gradient(180deg, #c8ced6 0%, #a3abb5 50%, #b8bec7 51%, #e6e9ed 100%);
+  }
+
+  .ios-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .ios-btn.icon-only { padding: 0; width: 32px; min-width: 32px; }
+  .ios-btn .arrow { font-size: 15px; line-height: 1; font-weight: bold; }
+
+  /* НАВИГАЦИЯ */
+  .navbar {
+    height: 38px;
+    flex-shrink: 0;
+    background: linear-gradient(180deg, #f0f4f9 0%, #d5dce4 100%);
+    border-bottom: 1px solid #8e8e93;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    gap: 6px;
+  }
+
+  .navbar .title {
+    flex: 1;
+    text-align: center;
+    font-size: 13px;
+    font-weight: bold;
+    color: #2c3542;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.85);
+    padding: 0 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* КОНТЕНТ */
+  .content {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: #ffffff;
+    padding: 0;
+  }
+
+  .content::-webkit-scrollbar { width: 10px; }
+  .content::-webkit-scrollbar-track { background: #e0e3e7; }
+  .content::-webkit-scrollbar-thumb {
+    background: #8e8e93;
+    border-radius: 5px;
+    border: 2px solid #e0e3e7;
+  }
+
+  .section-head {
+    padding: 6px 14px 4px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #4a5565;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.85);
+    background: linear-gradient(180deg, #d5dce4 0%, #b3bcc7 100%);
+    border-top: 1px solid #8e8e93;
+    border-bottom: 1px solid #8e8e93;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  /* ЯЧЕЙКИ */
+  .cell {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid #d5dce4;
+    background: #ffffff;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+
+  .cell:last-child { border-bottom: none; }
+  .cell:active { background: linear-gradient(180deg, #d6e5f5 0%, #b8d2ea 100%); }
+
+  .cell-thumb {
+    flex-shrink: 0;
+    width: 60px;
+    height: 60px;
+    border-radius: 6px;
+    border: 1px solid #b0b8c0;
+    background: #e0e3e7;
+    object-fit: cover;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+    filter: grayscale(100%);
+  }
+
+  .cell-body { flex: 1; min-width: 0; }
+
+  .cell-meta {
+    font-size: 11px;
+    color: #8a8a8e;
+    margin-bottom: 2px;
+  }
+
+  .cell-title {
+    font-size: 14px;
+    font-weight: bold;
+    color: #2c3542;
+    line-height: 1.3;
+    margin-bottom: 3px;
+  }
+
+  .cell-text {
+    font-size: 12px;
+    color: #555c66;
+    line-height: 1.4;
+  }
+
+  .cell-arrow {
+    flex-shrink: 0;
+    align-self: center;
+    width: 8px;
+    height: 13px;
+    position: relative;
+  }
+
+  .cell-arrow::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid #b0b8c0;
+    border-top: 2px solid #b0b8c0;
+    transform: translateY(-50%) rotate(45deg);
+    border-radius: 1px;
+  }
+
+  /* СТАТЬЯ */
+  .article { padding: 14px 16px 24px; }
+
+  .article-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: #007aff;
+    cursor: pointer;
+    font-weight: 500;
+  }
+
+  .article-back:active { opacity: 0.5; }
+
+  .article-title {
+    font-size: 22px;
+    font-weight: bold;
+    color: #1a1f28;
+    line-height: 1.25;
+    margin-bottom: 8px;
+    letter-spacing: -0.3px;
+  }
+
+  .article-info {
+    padding-bottom: 10px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid #d5dce4;
+    font-size: 11px;
+    color: #8a8a8e;
+  }
+
+  .article-image {
+    display: block;
+    max-width: 100%;
+    max-height: 260px;
+    margin: 0 auto 14px;
+    border-radius: 8px;
+    border: 1px solid #b0b8c0;
+    background: #e0e3e7;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    filter: grayscale(100%);
+  }
+
+  .article-text {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #2c3542;
+  }
+
+  .article-text p { margin-bottom: 12px; }
+
+  /* СООБЩЕНИЯ */
+  .notice {
+    padding: 40px 20px;
+    text-align: center;
+    font-size: 13px;
+    color: #8a8a8e;
+  }
+
+  .notice strong {
+    display: block;
+    font-size: 15px;
+    color: #2c3542;
+    margin-bottom: 8px;
+  }
+
+  .notice .ios-btn { margin-top: 14px; }
+
+  .loader {
+    width: 28px;
+    height: 28px;
+    margin: 0 auto 14px;
+    border: 3px solid rgba(142,142,147,0.3);
+    border-top-color: #007aff;
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* GOOGLE CSE */
+  .cse-wrap .gcse-searchresults-only {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+  }
+
+  .cse-wrap .gsc-search-box,
+  .cse-wrap .gsc-search-box-tools,
+  .cse-wrap .gsc-adBlock,
+  .cse-wrap table.gsc-search-box,
+  .cse-wrap .gsc-input-box,
+  .cse-wrap .gsc-input,
+  .cse-wrap .gsc-search-button,
+  .cse-wrap .gsc-clear-button,
+  .cse-wrap .gsc-above-wrapper-area .gsc-result-info,
+  .cse-wrap .gsc-orderby-container {
+    display: none !important;
+  }
+
+  .cse-wrap .gsc-control-cse {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    font-family: inherit !important;
+    font-size: 13px !important;
+  }
+
+  .cse-wrap .gsc-results-wrapper-overlay,
+  .cse-wrap .gsc-results-wrapper-nooverlay {
+    position: static !important;
+    inset: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    transform: none !important;
+    opacity: 1 !important;
+    z-index: auto !important;
+  }
+
+  .cse-wrap .gsc-results {
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background: transparent !important;
+  }
+
+  .cse-wrap .gsc-webResult.gsc-result {
+    padding: 10px 14px !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+    border: none !important;
+    border-bottom: 1px solid #d5dce4 !important;
+    border-radius: 0 !important;
+  }
+
+  .cse-wrap .gsc-webResult.gsc-result:last-child { border-bottom: none !important; }
+  .cse-wrap .gsc-webResult.gsc-result:hover { background: #f5f8fc !important; }
+  .cse-wrap .gsc-webResult.gsc-result:active {
+    background: linear-gradient(180deg, #d6e5f5 0%, #b8d2ea 100%) !important;
+  }
+
+  .cse-wrap .gs-title,
+  .cse-wrap .gs-title b {
+    font-size: 14px !important;
+    font-weight: bold !important;
+    color: #2c3542 !important;
+    text-decoration: none !important;
+    line-height: 1.3 !important;
+    font-family: inherit !important;
+  }
+
+  .cse-wrap .gs-title:hover,
+  .cse-wrap .gs-title:hover b { color: #007aff !important; }
+
+  .cse-wrap .gs-snippet {
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+    color: #555c66 !important;
+    margin-top: 3px !important;
+    font-family: inherit !important;
+  }
+
+  .cse-wrap .gs-visibleUrl,
+  .cse-wrap .gs-visibleUrl-short,
+  .cse-wrap .gsc-url-top {
+    font-size: 11px !important;
+    color: #8a8a8e !important;
+  }
+
+  .cse-wrap .gsc-cursor {
+    margin-top: 12px !important;
+    padding: 12px 0 !important;
+    border-top: 1px solid #d5dce4;
+    text-align: center !important;
+    background: #ffffff;
+  }
+
+  .cse-wrap .gsc-cursor-page {
+    display: inline-block !important;
+    margin: 0 3px !important;
+    padding: 4px 10px !important;
+    font-size: 12px !important;
+    font-weight: bold !important;
+    color: #ffffff !important;
+    background: linear-gradient(180deg, #6fa8dc 0%, #2d6ca8 50%, #1e5a96 51%, #4a86c0 100%) !important;
+    border: 1px solid #1a4a78 !important;
+    border-radius: 15px !important;
+    text-decoration: none !important;
+    text-shadow: 0 -1px 0 rgba(0,0,0,0.4) !important;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.5) inset, 0 1px 2px rgba(0,0,0,0.2) !important;
+  }
+
+  .cse-wrap .gsc-cursor-current-page {
+    background: linear-gradient(180deg, #c8ced6 0%, #a3abb5 50%, #b8bec7 51%, #e6e9ed 100%) !important;
+    color: #2c3542 !important;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.75) !important;
+    border-color: #6b7280 !important;
+  }
+
+  .cse-wrap .gsc-thumbnail,
+  .cse-wrap .gs-image-box {
+    border: 1px solid #b0b8c0 !important;
+    border-radius: 6px !important;
+    overflow: hidden !important;
+    filter: grayscale(100%);
+  }
+
+  /* ФУТЕР */
+  .footer {
+    padding: 8px 14px;
+    background: linear-gradient(180deg, #d5dce4 0%, #b3bcc7 100%);
+    border-top: 1px solid #8e8e93;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset;
+    font-size: 11px;
+    color: #4a5565;
+    text-align: center;
+    flex-shrink: 0;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.7);
+  }
+
+  @media (max-width: 640px) {
+    .app { border: none; }
+    .header { padding: 0 6px; gap: 6px; }
+    .logo { font-size: 14px; }
+    .ios-btn { padding: 0 8px; font-size: 11px; }
+    .cell-thumb { width: 48px; height: 48px; }
+    .article-title { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <div class="header">
+    <span class="logo">Retrobrowser</span>
+    <div class="search-box">
+      <input
+        type="text"
+        class="search-input"
+        id="searchInput"
+        placeholder="Поиск через Google"
+        autocomplete="off"
+      >
+      <button class="ios-btn" id="searchBtn">Найти</button>
+      <button class="ios-btn gray" id="luckyBtn">Повезёт</button>
+    </div>
+  </div>
+
+  <div class="navbar">
+    <button class="ios-btn gray icon-only" id="backBtn" disabled title="Назад">
+      <span class="arrow">&#9664;</span>
+    </button>
+    <button class="ios-btn gray icon-only" id="forwardBtn" disabled title="Вперёд">
+      <span class="arrow">&#9654;</span>
+    </button>
+    <button class="ios-btn gray icon-only" id="refreshBtn" title="Обновить">
+      <span class="arrow">&#8635;</span>
+    </button>
+    <span class="title" id="navTitle">Свежие новости</span>
+  </div>
+
+  <div class="content" id="contentArea"></div>
+
+  <div class="footer">
+    RetroBrowser
+  </div>
+
+</div>
+
+<!-- Google Programmable Search Engine -->
+<script async src="https://cse.google.com/cse.js?cx=f25d13d0278294f21"></script>
+
+<script>
+(function () {
+  'use strict';
+
+  var API_BASE = 'https://ru.wikipedia.org/w/api.php';
+  var DEFAULT_LIMIT = 20;
+
+  var state = {
+    view: 'news',
+    articles: [],
+    currentArticle: null,
+    searchQuery: '',
+    history: [],
+    historyIndex: -1,
+    loading: false
+  };
+
+  var contentArea = document.getElementById('contentArea');
+  var searchInput = document.getElementById('searchInput');
+  var searchBtn   = document.getElementById('searchBtn');
+  var luckyBtn    = document.getElementById('luckyBtn');
+  var backBtn     = document.getElementById('backBtn');
+  var forwardBtn  = document.getElementById('forwardBtn');
+  var refreshBtn  = document.getElementById('refreshBtn');
+  var navTitle    = document.getElementById('navTitle');
+
+  var cseCounter = 0;
+
+  // === УТИЛИТЫ ===
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function truncate(text, max) {
+    if (!text) return '';
+    if (text.length <= max) return text;
+    var cut = text.slice(0, max);
+    var lastSpace = cut.lastIndexOf(' ');
+    return (lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut) + '...';
+  }
+
+  function formatDate(iso) {
+    if (!iso) return '';
+    try {
+      var d = new Date(iso);
+      var now = new Date();
+      var diffMs = now - d;
+      var diffMin = Math.floor(diffMs / 60000);
+      var diffH = Math.floor(diffMs / 3600000);
+      var diffD = Math.floor(diffMs / 86400000);
+      if (diffMin < 1) return 'только что';
+      if (diffMin < 60) return diffMin + ' мин назад';
+      if (diffH < 24) return diffH + ' ч назад';
+      if (diffD < 7) return diffD + ' дн назад';
+      return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' });
+    } catch (e) { return ''; }
+  }
+
+  function shuffle(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  function setTitle(text) {
+    navTitle.textContent = text || '';
+  }
+
+  // === WIKIPEDIA API ===
+
+  function fetchLatestNews(limit) {
+    var params = new URLSearchParams({
+      action: 'query', format: 'json', origin: '*',
+      generator: 'random', grnnamespace: '0', grnlimit: limit || DEFAULT_LIMIT,
+      prop: 'extracts|pageimages|info',
+      exintro: '1', explaintext: '1', exsentences: '3', exlimit: 'max',
+      piprop: 'thumbnail', pithumbsize: '200', inprop: 'url'
+    });
+    return fetch(API_BASE + '?' + params.toString())
+      .then(function (r) {
+        if (!r.ok) throw new Error('Ошибка сети: ' + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        var pages = data.query && data.query.pages ? data.query.pages : {};
+        var articles = Object.keys(pages).map(function (k) {
+          var p = pages[k];
+          return {
+            id: p.pageid,
+            title: p.title,
+            extract: p.extract || '',
+            thumbnail: p.thumbnail ? p.thumbnail.source : null,
+            url: p.fullurl,
+            touched: p.touched || new Date().toISOString()
+          };
+        });
+        return shuffle(articles);
+      });
+  }
+
+  // Поиск статей в Википедии
+  function searchWikipedia(query, limit) {
+    var params = new URLSearchParams({
+      action: 'query', format: 'json', origin: '*',
+      generator: 'search',
+      gsrsearch: query,
+      gsrnamespace: '0',
+      gsrlimit: limit || DEFAULT_LIMIT,
+      prop: 'extracts|pageimages|info',
+      exintro: '1', explaintext: '1', exsentences: '3', exlimit: 'max',
+      piprop: 'thumbnail', pithumbsize: '200', inprop: 'url'
+    });
+    return fetch(API_BASE + '?' + params.toString())
+      .then(function (r) {
+        if (!r.ok) throw new Error('Ошибка поиска: ' + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        if (!data.query || !data.query.pages) return [];
+        var pages = data.query.pages;
+        var arr = Object.keys(pages).map(function (k) {
+          var p = pages[k];
+          return {
+            id: p.pageid,
+            title: p.title,
+            extract: p.extract || '',
+            thumbnail: p.thumbnail ? p.thumbnail.source : null,
+            url: p.fullurl,
+            touched: p.touched || new Date().toISOString(),
+            index: p.index || 0
+          };
+        });
+        arr.sort(function (a, b) { return a.index - b.index; });
+        return arr;
+      });
+  }
+
+  function fetchArticle(pageId) {
+    var params = new URLSearchParams({
+      action: 'query', format: 'json', origin: '*',
+      pageids: pageId,
+      prop: 'extracts|pageimages|info',
+      explaintext: '1', exsectionformat: 'plain',
+      piprop: 'thumbnail', pithumbsize: '800', inprop: 'url'
+    });
+    return fetch(API_BASE + '?' + params.toString())
+      .then(function (r) {
+        if (!r.ok) throw new Error('Ошибка загрузки статьи');
+        return r.json();
+      })
+      .then(function (data) {
+        var pages = data.query && data.query.pages ? data.query.pages : {};
+        var page = pages[Object.keys(pages)[0]];
+        if (!page) throw new Error('Статья не найдена');
+        return {
+          id: page.pageid,
+          title: page.title,
+          extract: page.extract || '',
+          thumbnail: page.thumbnail ? page.thumbnail.source : null,
+          url: page.fullurl
+        };
+      });
+  }
+
+  // === РЕНДЕР ===
+
+  function renderLoading() {
+    contentArea.innerHTML =
+      '<div class="notice">' +
+        '<div class="loader"></div>' +
+        '<strong>Загрузка</strong>' +
+        'Пожалуйста, подождите...' +
+      '</div>';
+  }
+
+  function renderError(message) {
+    contentArea.innerHTML =
+      '<div class="notice">' +
+        '<strong>Не удалось загрузить</strong>' +
+        escapeHtml(message) +
+        '<br><button class="ios-btn" id="retryBtn">Повторить</button>' +
+      '</div>';
+    var retry = document.getElementById('retryBtn');
+    if (retry) {
+      retry.addEventListener('click', function () {
+        if (state.view === 'article' && state.currentArticle) {
+          openArticle(state.currentArticle.id, false);
+        } else if (state.searchQuery) {
+          doSearch(state.searchQuery);
+        } else {
+          loadNews();
+        }
+      });
+    }
+  }
+
+  function renderEmpty(message) {
+    contentArea.innerHTML =
+      '<div class="notice">' +
+        '<strong>Ничего не найдено</strong>' +
+        escapeHtml(message || 'Попробуйте изменить запрос.') +
+      '</div>';
+  }
+
+  function renderNewsList(articles, headerText, metaText) {
+    var items = articles.map(function (a, i) {
+      var desc = truncate(a.extract, 180);
+      var thumb = a.thumbnail
+        ? '<img class="cell-thumb" src="' + escapeHtml(a.thumbnail) + '" alt="">'
+        : '';
+      return '' +
+        '<div class="cell" data-id="' + a.id + '" data-index="' + i + '">' +
+          thumb +
+          '<div class="cell-body">' +
+            '<div class="cell-meta">Wikipedia<span> &middot; ' + formatDate(a.touched) + '</span></div>' +
+            '<div class="cell-title">' + escapeHtml(a.title) + '</div>' +
+            '<div class="cell-text">' + escapeHtml(desc) + '</div>' +
+          '</div>' +
+          '<div class="cell-arrow"></div>' +
+        '</div>';
+    }).join('');
+
+    contentArea.innerHTML =
+      '<div class="section-head">' + escapeHtml(headerText) + ' &mdash; ' + escapeHtml(metaText) + '</div>' +
+      (items || '<div class="notice">Нет статей</div>');
+
+    var cards = contentArea.querySelectorAll('.cell');
+    for (var i = 0; i < cards.length; i++) {
+      cards[i].addEventListener('click', function () {
+        var id = parseInt(this.getAttribute('data-id'), 10);
+        openArticle(id, true);
+      });
+    }
+
+    contentArea.scrollTop = 0;
+    setTitle(headerText);
+  }
+
+  function renderArticle(article) {
+    var raw = (article.extract || '').split(/\n+/);
+    var paragraphs = [];
+    for (var i = 0; i < raw.length; i++) {
+      var p = raw[i].trim();
+      if (p.length > 0) paragraphs.push(p);
+    }
+    var body = paragraphs.length
+      ? paragraphs.map(function (p) { return '<p>' + escapeHtml(p) + '</p>'; }).join('')
+      : '<p><em>Текст статьи недоступен.</em></p>';
+
+    var thumb = article.thumbnail
+      ? '<img class="article-image" src="' + escapeHtml(article.thumbnail) + '" alt="">'
+      : '';
+
+    contentArea.innerHTML =
+      '<div class="article">' +
+        '<span class="article-back" id="articleBack">&#9664; Назад</span>' +
+        '<div class="article-title">' + escapeHtml(article.title) + '</div>' +
+        '<div class="article-info">' +
+          'Источник: Wikipedia &middot; ' +
+          '<a href="' + escapeHtml(article.url) + '" target="_blank" rel="noopener">открыть оригинал</a>' +
+        '</div>' +
+        thumb +
+        '<div class="article-text">' + body + '</div>' +
+      '</div>';
+
+    var back = document.getElementById('articleBack');
+    if (back) back.addEventListener('click', goBack);
+
+    contentArea.scrollTop = 0;
+    setTitle(truncate(article.title, 50));
+  }
+
+  // === GOOGLE CSE (для кнопки "Найти") ===
+
+  function renderGoogleSearch(query) {
+    cseCounter++;
+    var containerId = 'gcse-container-' + cseCounter;
+
+    contentArea.innerHTML =
+      '<div class="section-head">Результаты &mdash; ' + escapeHtml(truncate(query, 40)) + '</div>' +
+      '<div class="cse-wrap">' +
+        '<div id="' + containerId + '" class="gcse-searchresults-only"></div>' +
+      '</div>';
+
+    contentArea.scrollTop = 0;
+    setTitle('Поиск: ' + truncate(query, 40));
+
+    waitForCSE(function () {
+      var container = document.getElementById(containerId);
+      if (!container) return;
+      try {
+        var gname = 'cse-gname-' + cseCounter;
+        window.google.search.cse.element.render({
+          div: container,
+          tag: 'searchresults-only',
+          gname: gname,
+          attributes: {
+            enableHistory: false,
+            autoSearchOnLoad: false,
+            disableWebSearch: false,
+            linkTarget: '_blank'
+          }
+        });
+        setTimeout(function () {
+          var el = window.google.search.cse.element.getElement(gname);
+          if (el && el.execute) {
+            el.execute(query);
+            setTimeout(forceInlineResults, 120);
+          }
+        }, 150);
+      } catch (e) {
+        console.error('CSE render error:', e);
+        fallbackGoogleLink(container, query);
+      }
+    });
+  }
+
+  function forceInlineResults() {
+    var wrappers = contentArea.querySelectorAll('.gsc-results-wrapper-overlay');
+    for (var i = 0; i < wrappers.length; i++) {
+      var w = wrappers[i];
+      w.classList.remove('gsc-results-wrapper-overlay');
+      w.classList.add('gsc-results-wrapper-nooverlay');
+      w.style.position = 'static';
+      w.style.inset = 'auto';
+      w.style.width = '100%';
+      w.style.maxWidth = '100%';
+      w.style.height = 'auto';
+      w.style.maxHeight = 'none';
+      w.style.margin = '0';
+      w.style.padding = '0';
+      w.style.background = 'transparent';
+      w.style.border = 'none';
+      w.style.boxShadow = 'none';
+      w.style.overflow = 'visible';
+      w.style.transform = 'none';
+      w.style.opacity = '1';
+      w.style.zIndex = 'auto';
+    }
+    var backdrops = contentArea.querySelectorAll(
+      '.gsc-results-wrapper-overlay-backdrop, .gsc-modal-background-image'
+    );
+    for (var j = 0; j < backdrops.length; j++) backdrops[j].parentNode.removeChild(backdrops[j]);
+  }
+
+  function fallbackGoogleLink(container, query) {
+    container.innerHTML =
+      '<div class="cell" style="cursor:default;">' +
+        '<div class="cell-body">' +
+          '<div class="cell-meta">Google</div>' +
+          '<div class="cell-title">Поиск: ' + escapeHtml(query) + '</div>' +
+          '<div class="cell-text">Открыть напрямую: ' +
+            '<a href="https://www.google.com/search?q=' + encodeURIComponent(query) + '" ' +
+               'target="_blank" rel="noopener">google.com/search</a>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function waitForCSE(cb, attempts) {
+    attempts = attempts || 0;
+    if (window.google && window.google.search && window.google.search.cse && window.google.search.cse.element) {
+      cb();
+    } else if (attempts < 50) {
+      setTimeout(function () { waitForCSE(cb, attempts + 1); }, 100);
+    } else {
+      console.warn('Google CSE не загрузился');
+      cb();
+    }
+  }
+
+  // === "ПОВЕЗЁТ" — работает через Wikipedia API ===
+  // Берём 10 результатов поиска по запросу и открываем случайную статью.
+  // Это надёжно, т.к. не зависит от iframe Google CSE.
+
+  function doLucky(query) {
+    if (!query || !query.trim()) {
+      searchInput.focus();
+      return;
+    }
+    query = query.trim();
+    state.searchQuery = query;
+    state.view = 'search';
+    state.loading = true;
+
+    renderLoading();
+    setTitle('Повезёт: ' + truncate(query, 40));
+
+    searchWikipedia(query, 10).then(function (articles) {
+      state.loading = false;
+      if (!articles || articles.length === 0) {
+        renderEmpty('По запросу «' + query + '» ничего не найдено.');
+        setTitle('Поиск: ' + truncate(query, 40));
+        pushHistory({ view: 'search', query: query });
+        updateNavButtons();
+        return;
+      }
+      // Случайная из первых 10 — вот и "повезёт"
+      var pick = articles[Math.floor(Math.random() * articles.length)];
+      openArticle(pick.id, true);
+    }).catch(function (e) {
+      console.error(e);
+      state.loading = false;
+      renderError(e.message || 'Ошибка');
+      updateNavButtons();
+    });
+  }
+
+  // === ДЕЙСТВИЯ ===
+
+  function loadNews() {
+    state.loading = true;
+    renderLoading();
+    fetchLatestNews(DEFAULT_LIMIT).then(function (articles) {
+      state.articles = articles;
+      state.view = 'news';
+      state.searchQuery = '';
+      renderNewsList(articles, 'Свежие новости', 'случайные статьи');
+      pushHistory({ view: 'news', query: '' });
+    }).catch(function (e) {
+      console.error(e);
+      renderError(e.message || 'Неизвестная ошибка');
+    }).then(function () {
+      state.loading = false;
+      updateNavButtons();
+    });
+  }
+
+  function doSearch(query) {
+    if (!query || !query.trim()) {
+      loadNews();
+      return;
+    }
+    state.searchQuery = query.trim();
+    state.view = 'search';
+    state.loading = false;
+    renderGoogleSearch(state.searchQuery);
+    pushHistory({ view: 'search', query: state.searchQuery });
+    updateNavButtons();
+  }
+
+  function openArticle(pageId, addToHistory) {
+    state.loading = true;
+    renderLoading();
+    fetchArticle(pageId).then(function (article) {
+      state.currentArticle = article;
+      state.view = 'article';
+      renderArticle(article);
+      if (addToHistory !== false) pushHistory({ view: 'article', id: pageId });
+    }).catch(function (e) {
+      console.error(e);
+      renderError(e.message || 'Не удалось открыть статью');
+    }).then(function () {
+      state.loading = false;
+      updateNavButtons();
+    });
+  }
+
+  // === ИСТОРИЯ ===
+
+  function pushHistory(entry) {
+    if (state.historyIndex < state.history.length - 1) {
+      state.history = state.history.slice(0, state.historyIndex + 1);
+    }
+    state.history.push(entry);
+    state.historyIndex = state.history.length - 1;
+    updateNavButtons();
+  }
+
+  function goBack() {
+    if (state.historyIndex > 0) {
+      state.historyIndex--;
+      applyHistoryEntry(state.history[state.historyIndex]);
+    }
+  }
+
+  function goForward() {
+    if (state.historyIndex < state.history.length - 1) {
+      state.historyIndex++;
+      applyHistoryEntry(state.history[state.historyIndex]);
+    }
+  }
+
+  function applyHistoryEntry(entry) {
+    if (!entry) return;
+    if (entry.view === 'news') {
+      searchInput.value = '';
+      loadNewsFromHistory();
+    } else if (entry.view === 'search') {
+      searchInput.value = entry.query;
+      state.searchQuery = entry.query;
+      renderGoogleSearch(entry.query);
+    } else if (entry.view === 'article' && entry.id) {
+      openArticle(entry.id, false);
+    }
+    updateNavButtons();
+  }
+
+  function loadNewsFromHistory() {
+    state.loading = true;
+    renderLoading();
+    fetchLatestNews(DEFAULT_LIMIT).then(function (articles) {
+      state.articles = articles;
+      state.view = 'news';
+      state.searchQuery = '';
+      renderNewsList(articles, 'Свежие новости', 'случайные статьи');
+    }).catch(function (e) {
+      renderError(e.message);
+    }).then(function () {
+      state.loading = false;
+      updateNavButtons();
+    });
+  }
+
+  function updateNavButtons() {
+    backBtn.disabled = state.historyIndex <= 0 || state.loading;
+    forwardBtn.disabled = state.historyIndex >= state.history.length - 1 || state.loading;
+  }
+
+  // === СОБЫТИЯ ===
+
+  searchBtn.addEventListener('click', function () { doSearch(searchInput.value); });
+  luckyBtn.addEventListener('click', function () { doLucky(searchInput.value); });
+
+  searchInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      if (e.shiftKey) doLucky(searchInput.value);
+      else doSearch(searchInput.value);
+    }
+  });
+
+  backBtn.addEventListener('click', goBack);
+  forwardBtn.addEventListener('click', goForward);
+  refreshBtn.addEventListener('click', function () {
+    if (state.view === 'article' && state.currentArticle) openArticle(state.currentArticle.id, false);
+    else if (state.searchQuery) doSearch(state.searchQuery);
+    else loadNews();
+  });
+
+  // === СТАРТ ===
+  loadNews();
+
+})();
+</script>
+</body>
+</html>
